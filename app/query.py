@@ -3,17 +3,19 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
+from app.config import config
+
 def query_rag():
     # Set the same embedding model used during indexing
     Settings.embed_model = HuggingFaceEmbedding(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+        model_name=config.embedding_model,
     )
 
-    storage_context = StorageContext.from_defaults(persist_dir="storage")
+    storage_context = StorageContext.from_defaults(persist_dir=config.storage_dir)
     index = load_index_from_storage(storage_context)
 
     # Setup local LLM with an increased timeout for local generation
-    llm = Ollama(model="llama3", request_timeout=360.0)
+    llm = Ollama(model=config.llm_model, request_timeout=360.0)
 
     # Better prompt (IMPORTANT)
     qa_prompt = PromptTemplate(
