@@ -1,65 +1,230 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import styles from "./page.module.css";
+
+type Message = {
+  id: string;
+  role: "user" | "ai";
+  content: string;
+  sources?: string[];
+};
 
 export default function Home() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userQuery = input.trim();
+    setInput("");
+    setError(null);
+    
+    // Add user message to UI immediately
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userQuery,
+    };
+    
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: userQuery }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "ai",
+        content: data.answer,
+        sources: data.sources,
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (err: unknown) {
+      console.error("API Error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to connect to the API. Is the backend running?";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const setCardQuery = (query: string) => {
+    setInput(query);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className={styles.container}>
+      {/* Top Navigation Bar */}
+      <nav className={styles.topNav}>
+        <div className={styles.navGroup}>
+          <button className={styles.iconBtn} aria-label="Search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+          <button className={styles.pillBtn} onClick={() => setMessages([])}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            New Chat
+          </button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+        <div className={styles.navGroup}>
+          <button className={styles.iconBtn} aria-label="Sidebar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          </button>
+          <button className={styles.pillBtn}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            Share
+          </button>
+        </div>
+      </nav>
+
+      <div className={styles.chatBox}>
+        <div className={styles.messages}>
+          {messages.length === 0 ? (
+            <div className={styles.welcomeContainer}>
+              <div className={styles.welcomeIconWrapper}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+              </div>
+              <h1 className={styles.welcomeTitle}>Good Morning, Founder</h1>
+              <p className={styles.welcomeSubtitle}>Hey there! What can I tell you about Paul Graham&apos;s essays today?</p>
+
+              <div className={styles.cardsGrid}>
+                <div className={styles.card} onClick={() => setCardQuery("How to get startup ideas?")}>
+                  <div className={styles.cardIcon}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                  </div>
+                  <h3 className={styles.cardTitle}>Startup Ideas</h3>
+                  <p className={styles.cardDesc}>Get a quick overview of how to find organic, meaningful startup ideas.</p>
+                  <button className={styles.cardAction}>View Essay</button>
+                </div>
+                
+                <div className={styles.card} onClick={() => setCardQuery("How to create wealth?")}>
+                  <div className={styles.cardIcon}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                  </div>
+                  <h3 className={styles.cardTitle}>Wealth Creation</h3>
+                  <p className={styles.cardDesc}>Identify the core mechanics of creating wealth and optimizing your leverage.</p>
+                  <button className={styles.cardAction}>Analyze Wealth</button>
+                </div>
+
+                <div className={styles.card} onClick={() => setCardQuery("Why Lisp is powerful?")}>
+                  <div className={styles.cardIcon}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                  </div>
+                  <h3 className={styles.cardTitle}>Programming Languages</h3>
+                  <p className={styles.cardDesc}>See the top-performing languages based on leverage, speed, and abstraction.</p>
+                  <button className={styles.cardAction}>View Insights</button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`${styles.messageWrapper} ${styles[msg.role]}`}
+                >
+                  <div
+                    className={`${styles.message} ${
+                      msg.role === "user" ? styles.userMessage : styles.aiMessage
+                    }`}
+                  >
+                    <div className={styles.content}>{msg.content}</div>
+                    
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className={styles.sources}>
+                        <div className={styles.sourceTitle}>Sources</div>
+                        {msg.sources.map((source, idx) => (
+                          <div key={idx} className={styles.sourceItem}>
+                            {source}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className={`${styles.messageWrapper} ${styles.ai}`}>
+                  <div className={`${styles.message} ${styles.aiMessage}`}>
+                    <div className={styles.loadingIndicator}>
+                      <div className={styles.dot}></div>
+                      <div className={styles.dot}></div>
+                      <div className={styles.dot}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          
+          <div ref={messagesEndRef} style={{ height: "100px", flexShrink: 0 }} />
+        </div>
+
+        <div className={styles.inputContainer}>
+          <form className={styles.form} onSubmit={handleSubmit}>
+            {error && <div className={styles.error}>{error}</div>}
+            
+            <button type="button" className={styles.inputActionBtn}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            
+            <button type="button" className={styles.inputActionBtn}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </button>
+            
+            <input
+              className={styles.input}
+              placeholder="Write a message here..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            
+            <button
+              type="submit"
+              className={`${styles.inputActionBtn} ${styles.submit}`}
+              disabled={!input.trim() || isLoading}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            </button>
+          </form>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
