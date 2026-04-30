@@ -41,6 +41,10 @@ The system follows a standard RAG flow:
 
 ## Architecture
 
+![RAG architecture diagram](public/architecture.svg)
+
+Editable source: [`architecture.excalidraw`](architecture.excalidraw)
+
 ```text
 Paul Graham essay URL
         |

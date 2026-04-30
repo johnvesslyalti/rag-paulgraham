@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2140 460" role="img" aria-labelledby="title desc">
+  <title id="title">RAG architecture diagram</title>
+  <desc id="desc">A retrieval augmented generation architecture flow from user through API, query processing, embedding, vector database, retrieval, context builder, LLM, post processing, and response, plus a document ingestion flow through chunking and embeddings into the vector database.</desc>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#1e1e1e"/>
+    </marker>
+    <filter id="roughen">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.45"/>
+    </filter>
+    <style>
+      .box {
+        fill: #fff;
+        stroke: #1e1e1e;
+        stroke-width: 2.4;
+        filter: url(#roughen);
+      }
+      .label {
+        fill: #1e1e1e;
+        font-family: "Virgil", "Comic Sans MS", "Segoe Print", cursive, sans-serif;
+        font-size: 27px;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+      .arrow {
+        fill: none;
+        stroke: #1e1e1e;
+        stroke-width: 2.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        marker-end: url(#arrowhead);
+        filter: url(#roughen);
+      }
+    </style>
+  </defs>
+
+  <rect width="2140" height="460" fill="#fff"/>
+
+  <g transform="translate(35 45)">
+    <g>
+      <rect class="box" x="0" y="0" width="150" height="82" rx="9"/>
+      <text class="label" x="75" y="41">User</text>
+    </g>
+    <g>
+      <rect class="box" x="210" y="0" width="150" height="82" rx="9"/>
+      <text class="label" x="285" y="41">API</text>
+    </g>
+    <g>
+      <rect class="box" x="415" y="0" width="165" height="82" rx="9"/>
+      <text class="label" x="497.5" y="41">Query Processing</text>
+    </g>
+    <g>
+      <rect class="box" x="640" y="0" width="165" height="82" rx="9"/>
+      <text class="label" x="722.5" y="41">Embedding</text>
+    </g>
+    <g>
+      <rect class="box" x="860" y="0" width="165" height="82" rx="9"/>
+      <text class="label" x="942.5" y="41">Vector DB</text>
+    </g>
+    <g>
+      <rect class="box" x="1075" y="0" width="165" height="82" rx="9"/>
+      <text class="label" x="1157.5" y="41">Retrieval</text>
+    </g>
+    <g>
+      <rect class="box" x="1290" y="0" width="180" height="82" rx="9"/>
+      <text class="label" x="1380" y="41">Context Builder</text>
+    </g>
+    <g>
+      <rect class="box" x="1520" y="0" width="150" height="82" rx="9"/>
+      <text class="label" x="1595" y="41">LLM</text>
+    </g>
+    <g>
+      <rect class="box" x="1725" y="0" width="180" height="82" rx="9"/>
+      <text class="label" x="1815" y="41">Post Processing</text>
+    </g>
+    <g>
+      <rect class="box" x="1960" y="0" width="150" height="82" rx="9"/>
+      <text class="label" x="2035" y="41">Response</text>
+    </g>
+
+    <path class="arrow" d="M155 41 C172 39, 190 39, 205 41"/>
+    <path class="arrow" d="M365 41 C379 41, 397 41, 410 41"/>
+    <path class="arrow" d="M585 41 C602 40, 619 40, 635 41"/>
+    <path class="arrow" d="M810 41 C825 40, 842 40, 855 41"/>
+    <path class="arrow" d="M1030 41 C1045 40, 1060 40, 1070 41"/>
+    <path class="arrow" d="M1245 41 C1258 41, 1274 41, 1285 41"/>
+    <path class="arrow" d="M1475 41 C1490 40, 1504 40, 1515 41"/>
+    <path class="arrow" d="M1675 41 C1692 40, 1710 40, 1720 41"/>
+    <path class="arrow" d="M1910 41 C1926 40, 1944 40, 1955 41"/>
+
+    <g transform="translate(210 220)">
+      <rect class="box" x="0" y="0" width="150" height="82" rx="9"/>
+      <text class="label" x="75" y="41">Documents</text>
+    </g>
+    <g transform="translate(415 220)">
+      <rect class="box" x="0" y="0" width="165" height="82" rx="9"/>
+      <text class="label" x="82.5" y="41">Chunking</text>
+    </g>
+    <g transform="translate(640 220)">
+      <rect class="box" x="0" y="0" width="165" height="82" rx="9"/>
+      <text class="label" x="82.5" y="41">Embeddings</text>
+    </g>
+
+    <path class="arrow" d="M365 261 C379 260, 397 260, 410 261"/>
+    <path class="arrow" d="M585 261 C602 260, 619 260, 635 261"/>
+    <path class="arrow" d="M810 261 C878 250, 929 164, 942 88"/>
+  </g>
+</svg>
