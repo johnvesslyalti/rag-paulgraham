@@ -19,7 +19,8 @@ def generate_answer(query: str, chunks: list[str]) -> str:
     context = "\n\n".join(chunks)
     prompt = (
         "You are a careful reading assistant.\n"
-        "Answer using ONLY the provided context.\n"
+        "Answer using ONLY the provided context. If a piece of the context seems "
+        "irrelevant to the specific topic or essay being asked about, IGNORE IT.\n"
         "Follow the user's requested format exactly. If the user asks for a specific "
         "number of points, provide exactly that many points.\n"
         "If the question is broad or vague, summarize the essay's main thesis first, "
@@ -35,3 +36,4 @@ def generate_answer(query: str, chunks: list[str]) -> str:
 
     response = get_llm().complete(prompt)
     return str(response)
+
