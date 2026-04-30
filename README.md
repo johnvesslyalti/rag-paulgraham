@@ -1,9 +1,9 @@
-# Local RAG Chatbot Over a Paul Graham Essay
+# Local RAG API Over Paul Graham Essays
 
 This project is a simple, fully local Retrieval-Augmented Generation (RAG)
-chatbot built with LlamaIndex. It indexes a Paul Graham essay, retrieves the
-most relevant text chunks for a user question, and uses a local Ollama Llama 3
-model to generate an answer grounded in the retrieved context.
+API built with FastAPI and LlamaIndex. The current focus is the data ingestion
+pipeline: scraping Paul Graham essays, validating the article dataset, and
+cleaning the content so it is ready for later chunking and indexing.
 
 The goal of this project is correctness, simplicity, and understanding the
 end-to-end RAG pipeline without relying on paid APIs.
@@ -13,29 +13,30 @@ end-to-end RAG pipeline without relying on paid APIs.
 The system follows a standard RAG flow:
 
 1. **Ingestion**
-   - Scrapes a Paul Graham essay from the web.
-   - Extracts the HTML body text using BeautifulSoup.
-   - Cleans extra whitespace.
-   - Saves the cleaned text locally in `data/essay.txt` for debugging and
-     inspection.
+   - Scrapes essay links from `https://www.paulgraham.com/articles.html`.
+   - Extracts article title, URL, and body text.
+   - Saves structured article records to `data/articles.json`.
 
-2. **Indexing**
-   - Loads the local text file using LlamaIndex.
+2. **Validation and Cleaning**
+   - Reports dataset quality statistics and suspicious records.
+   - Removes exact duplicate lines from article content.
+
+3. **Indexing** _(later step)_
+   - Loads `data/articles.json`.
    - Splits the text into chunks.
    - Converts each chunk into an embedding using a local HuggingFace embedding
      model.
    - Builds a vector index from those embeddings.
 
-3. **Storage**
+4. **Storage** _(later step)_
    - Persists the index locally in the `storage/` directory.
-   - This avoids rebuilding the index every time the chatbot is queried.
+   - This avoids rebuilding the index every time the API is queried.
 
-4. **Querying**
+5. **Querying** _(later step)_
    - Loads the persisted vector index.
    - Embeds the user query with the same embedding model used during indexing.
    - Retrieves the most relevant chunks from the index.
-   - Sends the retrieved context and user question to a local Ollama Llama 3
-     model.
+   - Sends the retrieved context and user question to a local Ollama model.
    - Uses a constrained prompt that asks the model to answer only from the
      provided context.
 
@@ -46,13 +47,16 @@ The system follows a standard RAG flow:
 Editable source: [`architecture.excalidraw`](architecture.excalidraw)
 
 ```text
-Paul Graham essay URL
+Paul Graham articles index
         |
         v
-HTML scraping + cleaning
+Article scraping
         |
         v
-data/essay.txt
+data/articles.json
+        |
+        v
+Validation + cleaning
         |
         v
 Chunking with LlamaIndex
@@ -64,13 +68,14 @@ Local HuggingFace embeddings
 Persisted local vector index
         |
         v
-User query -> retrieval -> context -> Ollama Llama 3 -> answer
+User query -> FastAPI -> retrieval -> context -> Ollama -> answer
 ```
 
 ## Tech Stack
 
 - **Python**
-- **LlamaIndex** for document loading, chunking, indexing, and retrieval
+- **FastAPI** for the HTTP API
+- **LlamaIndex** for chunking, indexing, and retrieval
 - **BeautifulSoup** for HTML parsing
 - **HuggingFace sentence-transformers** for local embeddings
 - **Ollama** for running the local Llama 3 language model
@@ -82,7 +87,7 @@ The main configuration lives in `app/config.py`.
 
 ```python
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-llm_model = "llama3"
+llm_model = "llama3.2:3b"
 chunk_size = 1024
 chunk_overlap = 200
 data_dir = "data"
@@ -144,41 +149,47 @@ Install Ollama and pull the Llama 3 model:
 ollama pull llama3
 ```
 
-### 3. Ingest the essay
+### 3. Scrape articles
 
 ```bash
-python -m app.ingest
+python -m app.scrape_articles
 ```
 
 This creates:
 
 ```text
-data/essay.txt
+data/articles.json
 ```
 
-### 4. Build the index
+### 4. Validate and clean the dataset
+
+```bash
+python -m app.validate_articles
+python -m app.clean_articles
+```
+
+### 5. Run the API later
+
+```bash
+uvicorn main:app --reload
+```
+
+Open the API docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Indexing is intentionally not part of the current ingestion workflow. When the
+dataset is finalized, build the index with:
 
 ```bash
 python -m app.indexer
 ```
 
-This creates or updates the local persisted index in:
-
-```text
-storage/
-```
-
-### 5. Query the chatbot
-
-```bash
-python -m app.query
-```
-
-Then ask questions in the terminal.
-
 ## Prompting Strategy
 
-The query step uses a constrained prompt:
+The generation step uses a constrained prompt:
 
 ```text
 You are answering based ONLY on the provided context.
@@ -203,11 +214,9 @@ This is a learning-focused prototype, not a production-grade RAG system.
 
 Current limitations:
 
-- It indexes only one essay.
-- HTML cleaning is basic and extracts the full `<body>` text.
+- HTML cleaning is intentionally basic.
 - There is no explicit retrieval evaluation dataset.
-- The system does not currently show citations or source chunks with answers.
-- The query engine uses LlamaIndex retrieval defaults unless configured further.
+- The API returns retrieved chunks, but citation formatting is still basic.
 - The prompt reduces hallucination risk but does not guarantee grounded answers.
 - Local LLM performance depends on the machine running Ollama.
 
