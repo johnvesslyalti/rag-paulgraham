@@ -1,4 +1,4 @@
-def process_query(query: str, history: list = None) -> str:
+async def process_query(query: str, history: list = None) -> str:
     from app.generation import get_llm
     
     if history is None:
@@ -23,7 +23,7 @@ IMPORTANT:
 - Do NOT output any other text, explanations, or quotes.
 """
     llm = get_llm()
-    response = llm.complete(prompt)
+    response = await llm.acomplete(prompt)
     result = str(response).strip()
     if result.startswith('"') and result.endswith('"'):
         result = result[1:-1]

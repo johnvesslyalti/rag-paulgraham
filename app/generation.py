@@ -26,7 +26,7 @@ def get_json_llm():
     )
 
 
-def generate_answer(query: str, chunks: list[str]) -> tuple[str, list[str]]:
+async def generate_answer_stream(query: str, chunks: list[str]):
     context = "\n\n".join(chunks)
     prompt = (
         "You are a careful reading assistant.\n"
@@ -40,19 +40,46 @@ def generate_answer(query: str, chunks: list[str]) -> tuple[str, list[str]]:
         "not provide enough context to answer.\n"
         "Do not add facts from outside the context.\n\n"
         "Keep the answer under 150 words.\n\n"
-        "ALSO, provide 2-3 follow-up questions based on the context and your answer.\n"
-        "Output the result ONLY as a JSON object with two keys: \"answer\" (string) and \"suggested_questions\" (list of strings).\n"
-        "Do NOT wrap the JSON in markdown blocks.\n\n"
+        "IMPORTANT: After your answer, you MUST write exactly '---SUGGESTED_QUESTIONS---' on a new line, "
+        "followed by 2-3 follow-up questions related to the context. Each question MUST be on a new line and start with a dash (-).\n\n"
         f"Context:\n{context}\n\n"
         f"Question:\n{query}\n\n"
+        "Answer:"
     )
 
-    response = get_json_llm().complete(prompt)
-    try:
-        data = json.loads(str(response))
-        answer = data.get("answer", str(response))
-        suggested = data.get("suggested_questions", [])
-        return answer, suggested
-    except Exception:
-        return str(response), []
+    llm = get_llm()
+    response_gen = await llm.astream_complete(prompt)
+    
+    in_questions_section = False
+    accumulated_questions_text = ""
+    accumulated_buffer = ""
+    marker = "---SUGGESTED_QUESTIONS---"
+
+    async for chunk in response_gen:
+        delta = chunk.delta
+        if not in_questions_section:
+            accumulated_buffer += delta
+            if marker in accumulated_buffer:
+                in_questions_section = True
+                parts = accumulated_buffer.split(marker)
+                if parts[0]:
+                    yield json.dumps({"type": "chunk", "content": parts[0]}) + "\n"
+                if len(parts) > 1:
+                    accumulated_questions_text += parts[1]
+            else:
+                if len(accumulated_buffer) > len(marker):
+                    safe_to_yield = accumulated_buffer[:-len(marker)]
+                    accumulated_buffer = accumulated_buffer[-len(marker):]
+                    if safe_to_yield:
+                        yield json.dumps({"type": "chunk", "content": safe_to_yield}) + "\n"
+        else:
+            accumulated_questions_text += delta
+
+    if not in_questions_section:
+        if accumulated_buffer:
+            yield json.dumps({"type": "chunk", "content": accumulated_buffer}) + "\n"
+    else:
+        questions = [q.strip().lstrip("-").strip() for q in accumulated_questions_text.split("\n") if q.strip().startswith("-")]
+        yield json.dumps({"type": "suggested_questions", "content": questions}) + "\n"
+
 

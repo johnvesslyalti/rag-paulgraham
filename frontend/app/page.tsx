@@ -60,17 +60,48 @@ export default function Home() {
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+      const aiMessageId = (Date.now() + 1).toString();
+      let aiMessage: Message = {
+        id: aiMessageId,
         role: "ai",
-        content: data.answer,
-        sources: data.sources,
-        suggested_questions: data.suggested_questions,
+        content: "",
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const data = JSON.parse(line);
+              if (data.type === "chunk") {
+                aiMessage.content += data.content;
+              } else if (data.type === "sources") {
+                aiMessage.sources = data.content;
+              } else if (data.type === "suggested_questions") {
+                aiMessage.suggested_questions = data.content;
+              }
+              setMessages((prev) => 
+                prev.map(m => m.id === aiMessageId ? { ...aiMessage } : m)
+              );
+            } catch (e) {
+              console.error("Error parsing NDJSON line:", line, e);
+            }
+          }
+        }
+      }
     } catch (err: unknown) {
       console.error("API Error:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to connect to the API. Is the backend running?";
@@ -96,21 +127,9 @@ export default function Home() {
       {/* Top Navigation Bar */}
       <nav className={styles.topNav}>
         <div className={styles.navGroup}>
-          <button className={styles.iconBtn} aria-label="Search">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          </button>
           <button className={styles.pillBtn} onClick={() => setMessages([])}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             New Chat
-          </button>
-        </div>
-        <div className={styles.navGroup}>
-          <button className={styles.iconBtn} aria-label="Sidebar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-          </button>
-          <button className={styles.pillBtn}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-            Share
           </button>
         </div>
       </nav>
@@ -226,14 +245,6 @@ export default function Home() {
         <div className={styles.inputContainer}>
           <form className={styles.form} onSubmit={handleSubmit}>
             {error && <div className={styles.error}>{error}</div>}
-            
-            <button type="button" className={styles.inputActionBtn}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            </button>
-            
-            <button type="button" className={styles.inputActionBtn}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            </button>
             
             <input
               className={styles.input}
