@@ -23,9 +23,9 @@ class RagConfig:
     storage_dir: str = os.getenv("RAG_STORAGE_DIR", "storage")
     embedding_model: str = os.getenv(
         "RAG_EMBEDDING_MODEL",
-        "sentence-transformers/all-MiniLM-L6-v2",
+        "text-embedding-3-small",
     )
-    llm_model: str = os.getenv("RAG_LLM_MODEL", "llama3.2:3b")
+    llm_model: str = os.getenv("RAG_LLM_MODEL", "gpt-4.1-nano")
     chunk_size: int = _get_int("RAG_CHUNK_SIZE", 1024)
     chunk_overlap: int = _get_int("RAG_CHUNK_OVERLAP", 200)
     similarity_top_k: int = _get_int("RAG_SIMILARITY_TOP_K", 5)

@@ -2,20 +2,20 @@ import json
 from pathlib import Path
 import faiss
 from llama_index.core import VectorStoreIndex, Document, Settings, StorageContext
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.faiss import FaissVectorStore
 
 from app.config import config
 
-Settings.embed_model = HuggingFaceEmbedding(
-    model_name=config.embedding_model,
+Settings.embed_model = OpenAIEmbedding(
+    model=config.embedding_model,
 )
 Settings.chunk_size = config.chunk_size
 Settings.chunk_overlap = config.chunk_overlap
 
 def build_index():
-    # all-MiniLM-L6-v2 output dimension is 384
-    d = 384
+    # text-embedding-3-small output dimension is 1536
+    d = 1536
     faiss_index = faiss.IndexFlatL2(d)
     
     vector_store = FaissVectorStore(faiss_index=faiss_index)

@@ -1,38 +1,34 @@
 import json
 from functools import lru_cache
 
-from llama_index.llms.ollama import Ollama
+from llama_index.llms.openai import OpenAI
 
 from app.config import config
 
 
 @lru_cache(maxsize=1)
 def get_llm():
-    return Ollama(
+    return OpenAI(
         model=config.llm_model,
-        request_timeout=360.0,
         temperature=0,
-        additional_kwargs={"options": {"num_predict": 180}},
+        max_tokens=180,
     )
 
 
 @lru_cache(maxsize=1)
 def get_rewriter_llm():
-    return Ollama(
+    return OpenAI(
         model=config.llm_model,
-        request_timeout=60.0,
         temperature=0,
-        additional_kwargs={"options": {"num_predict": 50}}, # Rewriting needs very few tokens
+        max_tokens=50, # Rewriting needs very few tokens
     )
 
 
 def get_json_llm():
-    return Ollama(
+    return OpenAI(
         model=config.llm_model,
-        request_timeout=360.0,
         temperature=0,
-        additional_kwargs={"options": {"num_predict": 300}},
-        format="json"
+        max_tokens=300,
     )
 
 
