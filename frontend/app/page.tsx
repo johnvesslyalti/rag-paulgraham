@@ -8,6 +8,7 @@ type Message = {
   role: "user" | "ai";
   content: string;
   sources?: string[];
+  suggested_questions?: string[];
 };
 
 export default function Home() {
@@ -49,7 +50,10 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: userQuery }),
+        body: JSON.stringify({ 
+          query: userQuery,
+          history: messages.map(m => ({ role: m.role, content: m.content }))
+        }),
       });
 
       if (!response.ok) {
@@ -63,6 +67,7 @@ export default function Home() {
         role: "ai",
         content: data.answer,
         sources: data.sources,
+        suggested_questions: data.suggested_questions,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -115,7 +120,11 @@ export default function Home() {
           {messages.length === 0 ? (
             <div className={styles.welcomeContainer}>
               <div className={styles.welcomeIconWrapper}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
               </div>
               <h1 className={styles.welcomeTitle}>Good Morning, Founder</h1>
               <p className={styles.welcomeSubtitle}>Hey there! What can I tell you about Paul Graham&apos;s essays today?</p>
@@ -171,6 +180,26 @@ export default function Home() {
                             {source}
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {msg.suggested_questions && msg.suggested_questions.length > 0 && (
+                      <div className={styles.suggestedQuestions}>
+                        <div className={styles.suggestedTitle}>Suggested Follow-ups</div>
+                        <div className={styles.suggestedPills}>
+                          {msg.suggested_questions.map((question, idx) => (
+                            <button 
+                              key={idx} 
+                              className={styles.suggestedPill}
+                              onClick={() => {
+                                setInput(question);
+                                // setTimeout(() => handleSubmit(), 0); // optional auto-submit
+                              }}
+                            >
+                              {question}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

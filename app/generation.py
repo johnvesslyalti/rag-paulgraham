@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 
 from llama_index.llms.ollama import Ollama
@@ -15,7 +16,17 @@ def get_llm():
     )
 
 
-def generate_answer(query: str, chunks: list[str]) -> str:
+def get_json_llm():
+    return Ollama(
+        model=config.llm_model,
+        request_timeout=360.0,
+        temperature=0,
+        additional_kwargs={"options": {"num_predict": 300}},
+        format="json"
+    )
+
+
+def generate_answer(query: str, chunks: list[str]) -> tuple[str, list[str]]:
     context = "\n\n".join(chunks)
     prompt = (
         "You are a careful reading assistant.\n"
@@ -29,11 +40,19 @@ def generate_answer(query: str, chunks: list[str]) -> str:
         "not provide enough context to answer.\n"
         "Do not add facts from outside the context.\n\n"
         "Keep the answer under 150 words.\n\n"
+        "ALSO, provide 2-3 follow-up questions based on the context and your answer.\n"
+        "Output the result ONLY as a JSON object with two keys: \"answer\" (string) and \"suggested_questions\" (list of strings).\n"
+        "Do NOT wrap the JSON in markdown blocks.\n\n"
         f"Context:\n{context}\n\n"
         f"Question:\n{query}\n\n"
-        "Answer:"
     )
 
-    response = get_llm().complete(prompt)
-    return str(response)
+    response = get_json_llm().complete(prompt)
+    try:
+        data = json.loads(str(response))
+        answer = data.get("answer", str(response))
+        suggested = data.get("suggested_questions", [])
+        return answer, suggested
+    except Exception:
+        return str(response), []
 

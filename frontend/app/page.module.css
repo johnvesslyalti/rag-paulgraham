@@ -242,6 +242,43 @@
   -webkit-box-orient: vertical;
 }
 
+.suggestedQuestions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-border);
+}
+
+.suggestedTitle {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.suggestedPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.suggestedPill {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.suggestedPill:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+
 /* Bottom Input Area */
 .inputContainer {
   position: absolute;

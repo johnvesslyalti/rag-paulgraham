@@ -32,12 +32,27 @@ def ask(request: AskRequest) -> AskResponse:
     if normalized_query in greetings:
         return AskResponse(
             answer="Hello! I am an AI trained on Paul Graham's essays. Ask me anything about startups, programming, or his philosophies!",
-            sources=[]
+            sources=[],
+            suggested_questions=["How to get startup ideas?", "What is Y Combinator?"]
         )
 
-    # 2. Standard RAG Pipeline
-    query = process_query(request.query)
-    chunks = retrieve(query)
-    answer = generate_answer(query, chunks)
+    # 2. Query Rewriting and Intent Detection
+    processed_query = process_query(request.query, request.history)
+    
+    if processed_query.startswith("CLARIFY:"):
+        clarifying_question = processed_query.replace("CLARIFY:", "").strip()
+        return AskResponse(
+            answer=clarifying_question,
+            sources=[],
+            suggested_questions=[]
+        )
 
-    return AskResponse(answer=answer, sources=chunks)
+    # 3. Standard RAG Pipeline
+    chunks = retrieve(processed_query)
+    answer, suggested_questions = generate_answer(processed_query, chunks)
+
+    return AskResponse(
+        answer=answer, 
+        sources=chunks,
+        suggested_questions=suggested_questions
+    )
