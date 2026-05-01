@@ -1,8 +1,9 @@
 async def process_query(query: str, history: list = None) -> str:
-    from app.generation import get_llm
+    from app.generation import get_rewriter_llm
     
-    if history is None:
-        history = []
+    if not history:
+        # Optimization: Skip LLM call for the first query in a session
+        return query.strip()
         
     history_str = "\n".join([f"{m.role}: {m.content}" for m in history[-4:]])
     prompt = f"""You are a query rewriting assistant for a search engine.
@@ -22,7 +23,7 @@ IMPORTANT:
 - Output ONLY the rewritten query OR the CLARIFY statement.
 - Do NOT output any other text, explanations, or quotes.
 """
-    llm = get_llm()
+    llm = get_rewriter_llm()
     response = await llm.acomplete(prompt)
     result = str(response).strip()
     if result.startswith('"') and result.endswith('"'):

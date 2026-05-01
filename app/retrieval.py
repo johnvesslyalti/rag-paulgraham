@@ -22,12 +22,17 @@ def get_retriever():
     return index.as_retriever(similarity_top_k=config.similarity_top_k)
 
 
-def retrieve(query: str) -> list[str]:
+def retrieve(query: str) -> list[dict]:
     retriever = get_retriever()
     nodes = retriever.retrieve(query)
 
-    return [
-        " ".join(node.node.get_content().split())
-        for node in nodes
-    ]
+    results = []
+    for node in nodes:
+        content = node.node.get_content().strip()
+        # The indexer uses "title" and "url" metadata keys
+        title = node.node.metadata.get("title")
+        source = title if title else " ".join(content.split()[:5]) + "..."
+        results.append({"content": content, "source": source})
+    
+    return results
 

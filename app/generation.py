@@ -16,6 +16,16 @@ def get_llm():
     )
 
 
+@lru_cache(maxsize=1)
+def get_rewriter_llm():
+    return Ollama(
+        model=config.llm_model,
+        request_timeout=60.0,
+        temperature=0,
+        additional_kwargs={"options": {"num_predict": 50}}, # Rewriting needs very few tokens
+    )
+
+
 def get_json_llm():
     return Ollama(
         model=config.llm_model,

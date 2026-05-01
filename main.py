@@ -46,11 +46,17 @@ async def ask(request: AskRequest):
             return
 
         # 3. Standard RAG Pipeline
-        chunks = retrieve(processed_query)
-        yield json.dumps({"type": "sources", "content": chunks}) + "\n"
+        retrieval_results = retrieve(processed_query)
+        
+        # Extract unique sources for the UI
+        sources = list(dict.fromkeys([res["source"] for res in retrieval_results]))
+        yield json.dumps({"type": "sources", "content": sources}) + "\n"
+
+        # Extract contents for the LLM
+        contents = [res["content"] for res in retrieval_results]
 
         from app.generation import generate_answer_stream
-        async for chunk in generate_answer_stream(processed_query, chunks):
+        async for chunk in generate_answer_stream(processed_query, contents):
             yield chunk
 
     return StreamingResponse(event_stream(), media_type="application/x-ndjson")

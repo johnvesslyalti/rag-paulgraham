@@ -132,19 +132,20 @@ export default function Home() {
             New Chat
           </button>
         </div>
+        <div className={styles.logoWrapper}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+          <span className={styles.logoText}>PG-RAG</span>
+        </div>
       </nav>
 
       <div className={styles.chatBox}>
         <div className={styles.messages}>
           {messages.length === 0 ? (
             <div className={styles.welcomeContainer}>
-              <div className={styles.welcomeIconWrapper}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                  <path d="M2 17l10 5 10-5"></path>
-                  <path d="M2 12l10 5 10-5"></path>
-                </svg>
-              </div>
               <h1 className={styles.welcomeTitle}>Good Morning, Founder</h1>
               <p className={styles.welcomeSubtitle}>Hey there! What can I tell you about Paul Graham&apos;s essays today?</p>
 
@@ -194,11 +195,13 @@ export default function Home() {
                     {msg.sources && msg.sources.length > 0 && (
                       <div className={styles.sources}>
                         <div className={styles.sourceTitle}>Sources</div>
-                        {msg.sources.map((source, idx) => (
-                          <div key={idx} className={styles.sourceItem}>
-                            {source}
-                          </div>
-                        ))}
+                        <div className={styles.sourcePills}>
+                          {msg.sources.map((source, idx) => (
+                            <div key={idx} className={styles.sourcePill}>
+                              {source}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 
@@ -239,7 +242,7 @@ export default function Home() {
             </>
           )}
           
-          <div ref={messagesEndRef} style={{ height: "100px", flexShrink: 0 }} />
+          {messages.length > 0 && <div ref={messagesEndRef} style={{ height: "100px", flexShrink: 0 }} />}
         </div>
 
         <div className={styles.inputContainer}>
