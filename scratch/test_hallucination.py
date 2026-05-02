@@ -17,8 +17,9 @@ async def test_query(query):
     print(f"Top Score: {max(scores) if scores else 'N/A'}")
     
     # 3. Confidence check (from main.py logic)
-    MAX_SCORE_THRESHOLD = 0.4
-    has_high_confidence = any(s > MAX_SCORE_THRESHOLD for s in scores)
+    # Using a more realistic threshold for FAISS distance (lower is better)
+    MAX_DISTANCE_THRESHOLD = 1.2
+    has_high_confidence = any(s < MAX_DISTANCE_THRESHOLD for s in scores)
     
     if not results or not has_high_confidence:
         from app.query_processing import generate_clarifying_question
@@ -43,7 +44,8 @@ async def main():
     queries = [
         "What does Paul Graham say about blockchain startups?",
         "What are his views on AI replacing founders?",
-        "Explain quantum computing"
+        "Explain quantum computing",
+        "What is Y Combinator?"
     ]
     for q in queries:
         await test_query(q)

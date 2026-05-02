@@ -43,11 +43,10 @@ async def ask(request: AskRequest):
         # 3. Retrieval with Confidence Check
         retrieval_results = retrieve(processed_query)
         
-        # Threshold for "high-confidence"
-        # LlamaIndex scores for FAISS/OpenAI are typically similarity scores (higher is better)
-        MAX_SCORE_THRESHOLD = 0.4 
+        # Threshold for "high-confidence" (Distance-based: lower is better)
+        MAX_DISTANCE_THRESHOLD = 1.2 
         
-        has_high_confidence = any(res.get("score", 0) > MAX_SCORE_THRESHOLD for res in retrieval_results)
+        has_high_confidence = any(res.get("score", 0) < MAX_DISTANCE_THRESHOLD for res in retrieval_results)
 
         if not retrieval_results or not has_high_confidence:
             from app.query_processing import generate_clarifying_question
