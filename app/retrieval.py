@@ -32,7 +32,11 @@ def retrieve(query: str) -> list[dict]:
         # The indexer uses "title" and "url" metadata keys
         title = node.node.metadata.get("title")
         source = title if title else " ".join(content.split()[:5]) + "..."
-        results.append({"content": content, "source": source})
+        results.append({
+            "content": content, 
+            "source": source,
+            "score": node.score # Include the similarity score
+        })
     
     return results
 

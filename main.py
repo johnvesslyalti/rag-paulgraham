@@ -37,17 +37,25 @@ async def ask(request: AskRequest):
             yield json.dumps({"type": "suggested_questions", "content": ["How to get startup ideas?", "What is Y Combinator?"]}) + "\n"
             return
 
-        # 2. Query Rewriting and Intent Detection
+        # 2. Query Rewriting (Context Restoration)
         processed_query = await process_query(request.query, request.history)
         
-        if processed_query.startswith("CLARIFY:"):
-            clarifying_question = processed_query.replace("CLARIFY:", "").strip()
-            yield json.dumps({"type": "chunk", "content": clarifying_question}) + "\n"
-            return
-
-        # 3. Standard RAG Pipeline
+        # 3. Retrieval with Confidence Check
         retrieval_results = retrieve(processed_query)
         
+        # Threshold for "high-confidence"
+        # LlamaIndex scores for FAISS/OpenAI are typically similarity scores (higher is better)
+        MAX_SCORE_THRESHOLD = 0.4 
+        
+        has_high_confidence = any(res.get("score", 0) > MAX_SCORE_THRESHOLD for res in retrieval_results)
+
+        if not retrieval_results or not has_high_confidence:
+            from app.query_processing import generate_clarifying_question
+            clarification = await generate_clarifying_question(request.query, request.history)
+            yield json.dumps({"type": "chunk", "content": clarification}) + "\n"
+            return
+
+        # 4. Standard RAG Pipeline (High Confidence)
         # Extract unique sources for the UI
         sources = list(dict.fromkeys([res["source"] for res in retrieval_results]))
         yield json.dumps({"type": "sources", "content": sources}) + "\n"
